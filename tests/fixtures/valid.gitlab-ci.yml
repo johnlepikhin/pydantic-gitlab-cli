@@ -1,0 +1,31 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_IMAGE: python:3.11-slim
+
+build:
+  stage: build
+  image: python:3.11-slim
+  script:
+    - echo "Building application"
+    - python setup.py build
+
+test:
+  stage: test
+  image: python:3.11-slim
+  script:
+    - pytest tests/
+  artifacts:
+    reports:
+      junit: test-results.xml
+    expire_in: 1 week
+
+deploy:
+  stage: deploy
+  image: alpine:3.18
+  script:
+    - echo "Deploying application"
+  when: manual

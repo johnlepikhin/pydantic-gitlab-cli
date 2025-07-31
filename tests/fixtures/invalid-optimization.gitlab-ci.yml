@@ -1,0 +1,102 @@
+stages:
+  - build
+  - test
+  - lint
+  - deploy
+
+variables:
+  UNUSED_GLOBAL_VAR: "not used anywhere"  # GL014: Unused global variable
+  SINGLE_USE_VAR: "only used in one job"  # GL014: Could be job-scoped
+
+# GL017: Jobs with similar patterns could use extends
+build_frontend:
+  stage: build
+  image: node:18-alpine
+  variables:
+    NODE_ENV: production
+    COMMON_VAR: "shared value"  # GL014: Duplicate variable
+  before_script:
+    - npm ci
+  script:
+    - npm run build
+  cache:  # GL018: Missing cache policy
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - node_modules/
+  # GL016: Missing timeout
+
+build_backend:
+  stage: build
+  image: node:18-alpine
+  variables:
+    NODE_ENV: production
+    COMMON_VAR: "shared value"  # GL014: Duplicate variable (should use extends)
+  before_script:
+    - npm ci
+  script:
+    - npm run build:backend
+  cache:  # GL018: Missing cache policy
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - node_modules/
+
+# GL015: Test job could benefit from parallelization
+test_unit:
+  stage: test
+  image: node:18-alpine
+  variables:
+    SINGLE_USE_VAR: $SINGLE_USE_VAR
+  script:
+    - npm test  # GL015: Jest tests could use --maxWorkers
+  cache:
+    key: "$CI_COMMIT_REF_SLUG-test"
+    paths:
+      - node_modules/
+    policy: push  # GL018: Test job should use 'pull' policy
+  timeout: 3 hours  # GL016: Very long timeout for test job
+
+test_e2e:
+  stage: test
+  image: node:18-alpine
+  script:
+    - npm run test:e2e
+  cache:
+    key: "$CI_COMMIT_REF_SLUG-e2e"
+    paths:
+      - node_modules/
+    policy: pull
+  timeout: 5 minutes  # GL016: Very short timeout for complex job
+
+# GL019: Lint job optimization issues
+eslint:
+  stage: lint  # Good: lint job in late stage, should be earlier
+  image: node:18  # GL019: Not using minimal image
+  script:
+    - eslint src/
+  artifacts:  # GL019: Lint jobs typically don't need artifacts
+    paths:
+      - eslint-report.html
+  cache:  # GL019: Simple lint might not need cache
+    key: "eslint"
+    paths:
+      - node_modules/
+  allow_failure: true  # GL019: Lint job allows failure
+
+# GL015: Matrix build opportunity
+test_matrix:
+  stage: test
+  image: node:16  # GL015: Version testing could use matrix
+  script:
+    - npm test --env=development
+    - npm test --env=production  # GL015: Environment testing could use matrix
+
+deploy:
+  stage: deploy
+  image: alpine:3.18
+  script:
+    - echo "Deploying"
+  cache:
+    key: "deploy"
+    paths:
+      - dist/
+    policy: pull-push  # GL018: Deploy job typically only needs 'pull'

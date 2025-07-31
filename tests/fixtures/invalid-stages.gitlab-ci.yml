@@ -1,0 +1,18 @@
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  script:
+    - echo "Building"
+
+test:
+  stage: test  # This stage is not defined in stages array
+  script:
+    - echo "Testing"
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying"

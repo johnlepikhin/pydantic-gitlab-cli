@@ -1,0 +1,12 @@
+variables:
+  DATABASE_PASSWORD: "super_secret_password_123"
+  API_KEY: "sk-1234567890abcdef"
+  CI_DEBUG_TRACE: "true"
+
+deploy_production:
+  stage: deploy
+  image: alpine:3.18
+  variables:
+    SECRET_TOKEN: "ghp_1234567890abcdefghijklmnopqrstuvwxyz" 
+  script:
+    - echo "Deploying to production"

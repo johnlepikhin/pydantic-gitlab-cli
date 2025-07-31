@@ -1,0 +1,18 @@
+include:
+  - project: 'group/ci-templates'
+    file: '/templates/build.yml'
+    # Missing ref - should use specific version
+  - project: 'group/security-scans'
+    file: '/templates/security.yml'
+    ref: 'main'  # Bad - uses branch instead of tag
+  - remote: 'https://raw.githubusercontent.com/company/ci-templates/main/deploy.yml'
+    # Bad - uses main branch in URL
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+    - echo "Building"

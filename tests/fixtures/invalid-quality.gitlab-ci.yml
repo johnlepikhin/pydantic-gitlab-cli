@@ -1,0 +1,54 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_IMAGE: "ubuntu:latest"
+
+# Rule 06: Large Docker image
+build_with_large_image:
+  stage: build
+  image: openjdk:17  # Large image without Alpine variant
+  script:
+    - apt-get update && apt-get install -y curl  # Rule 07: Package installation in script
+    - ./gradlew build
+  cache:  # Rule 09: Missing cache key
+    paths:
+      - .gradle/
+  artifacts:  # Rule 10: Missing expiration
+    paths:
+      - build/libs/*.jar
+
+# Rule 08: Bad key ordering (script before image)
+test_bad_order:
+  stage: test
+  script:
+    - echo "Testing"
+    - pip install pytest  # Rule 07: Package installation
+  image: python:3.11
+  services:
+    - postgres:13  # Rule 06: Large service image
+
+# Rule 11: Long-running test job without interruptible
+long_running_tests:
+  stage: test
+  image: node:18-alpine
+  timeout: 2 hours
+  script:
+    - npm ci
+    - npm run test:e2e
+  cache:
+    key: cache  # Rule 09: Generic cache key
+    paths:
+      - node_modules/
+
+deploy_prod:
+  stage: deploy
+  image: alpine:3.18
+  script:
+    - echo "Deploying"
+  artifacts:
+    paths:
+      - deploy.log
+    expire_in: never  # Rule 10: Very long expiration

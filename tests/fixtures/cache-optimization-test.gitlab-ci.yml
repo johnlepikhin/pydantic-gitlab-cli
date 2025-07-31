@@ -1,0 +1,107 @@
+# Test file for cache optimization rules
+stages:
+  - build
+  - test
+  - deploy
+
+variables:  
+  NODE_VERSION: "18"
+
+# Python job without cache
+python_job:
+  stage: build
+  image: python:3.9
+  script:
+    - pip install -r requirements.txt
+    - python setup.py install
+    - pytest
+
+# Node.js job without cache
+node_job:
+  stage: build
+  image: node:18
+  script:
+    - npm install
+    - npm run build
+    - npm run test
+
+# Rust job without cache
+rust_job:
+  stage: build
+  image: rust:1.70
+  script:
+    - cargo build --release
+    - cargo test
+
+# Go job without cache
+go_job:
+  stage: build
+  image: golang:1.20
+  script:
+    - go mod download
+    - go build ./...
+    - go test ./...
+
+# Java job without cache
+java_job:
+  stage: build
+  image: maven:3.8-openjdk-17
+  script:
+    - mvn compile
+    - mvn test
+    - mvn package
+
+# Job with some caching but not optimal
+python_partial_cache:
+  stage: build
+  image: python:3.9
+  cache:
+    paths:
+      - some-other-cache/
+  script:
+    - pip install flask
+    - python app.py
+
+# Job with proper caching (should not trigger warnings)
+node_with_cache:
+  stage: build
+  image: node:18
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+  script:
+    - npm install
+    - npm run build
+
+# General package managers
+php_job:
+  stage: build
+  image: php:8.1
+  script:
+    - composer install
+    - composer update
+
+ruby_job: 
+  stage: build
+  image: ruby:3.0
+  script:
+    - bundle install
+    - gem install rails
+
+dotnet_job:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:6.0
+  script:
+    - dotnet restore
+    - dotnet build
+    - dotnet test
+
+# System package managers (should suggest Docker images)
+system_packages:
+  stage: build
+  image: ubuntu:20.04
+  script:
+    - apt-get update
+    - apt-get install -y python3 python3-pip
+    - pip3 install requests

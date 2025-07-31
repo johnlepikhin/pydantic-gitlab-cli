@@ -1,0 +1,23 @@
+stages:
+  - build
+  - test
+
+"Build App":
+  stage: build
+  script:
+    - echo "Building"
+
+Test-Unit:
+  stage: test
+  script:
+    - echo "Testing"
+
+Deploy/Production:
+  stage: test
+  script:
+    - echo "Deploying"
+
+__debug__job:
+  stage: test
+  script:
+    - echo "Debug"

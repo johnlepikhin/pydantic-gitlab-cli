@@ -1,0 +1,17 @@
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  image: python:latest
+  script:
+    - echo "Building with latest tag"
+
+test:
+  stage: test
+  image: node
+  services:
+    - postgres:latest
+  script:
+    - npm test

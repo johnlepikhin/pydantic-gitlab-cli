@@ -1,0 +1,21 @@
+# Valid GitLab CI configuration
+stages:
+  - build
+
+variables:
+  NODE_VERSION: "18"
+
+build_job:
+  stage: build
+  image: node:18-alpine
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 day

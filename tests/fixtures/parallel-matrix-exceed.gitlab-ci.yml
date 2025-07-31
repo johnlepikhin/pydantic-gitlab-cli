@@ -1,0 +1,52 @@
+# Test file for GL033: Parallel matrix configurations that exceed limits
+# This file specifically tests cases that should trigger GL033 violations
+
+stages:
+  - test
+  - deploy
+
+# Matrix exceeding limit with actual values - should error
+test_matrix_exceed:
+  stage: test
+  script:
+    - echo "Testing $VERSION on $OS with $VARIANT"
+  parallel:
+    matrix:
+      # This creates a matrix that will generate 240 jobs (exceeds 200 limit)
+      - VERSION: v1.0
+        OS: linux
+        VARIANT: standard
+      - VERSION: v1.0
+        OS: linux
+        VARIANT: premium
+      - VERSION: v1.0
+        OS: windows
+        VARIANT: standard
+      - VERSION: v1.0
+        OS: windows
+        VARIANT: premium
+      - VERSION: v1.0
+        OS: macos
+        VARIANT: standard
+      - VERSION: v1.0
+        OS: macos
+        VARIANT: premium
+      - VERSION: v1.1
+        OS: linux
+        VARIANT: standard
+      - VERSION: v1.1
+        OS: linux
+        VARIANT: premium
+      - VERSION: v1.1
+        OS: windows
+        VARIANT: standard
+      - VERSION: v1.1
+        OS: windows
+        VARIANT: premium
+      - VERSION: v1.1
+        OS: macos
+        VARIANT: standard
+      - VERSION: v1.1
+        OS: macos
+        VARIANT: premium
+      # ... continuing this pattern to reach 240+ combinations

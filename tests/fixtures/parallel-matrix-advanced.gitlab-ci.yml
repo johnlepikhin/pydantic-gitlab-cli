@@ -1,0 +1,44 @@
+# Advanced parallel matrix configurations for GL033 testing
+# Demonstrates GitLab's newer matrix syntax with arrays
+
+stages:
+  - test
+  - build
+
+# Matrix with array values (GitLab 13.3+) - within limit
+test_matrix_arrays:
+  stage: test
+  script:
+    - echo "Testing Python $PYTHON on $OS"
+  parallel:
+    matrix:
+      - PYTHON: ["3.8", "3.9", "3.10", "3.11"]  # 4 versions
+        OS: ["ubuntu", "alpine"]                  # 2 OS
+        # Total: 4 * 2 = 8 jobs
+
+# Complex matrix approaching limit
+test_full_stack:
+  stage: test
+  script:
+    - echo "Testing $FRAMEWORK v$VERSION with $DB on $OS"
+  parallel:
+    matrix:
+      - FRAMEWORK: ["django", "flask", "fastapi"]      # 3 frameworks
+        VERSION: ["latest", "stable", "lts"]          # 3 versions
+        DB: ["postgres", "mysql", "sqlite", "redis"]  # 4 databases
+        OS: ["ubuntu-20.04", "ubuntu-22.04"]          # 2 OS
+        # Total: 3 * 3 * 4 * 2 = 72 jobs
+
+# Matrix that would exceed limit
+build_all_targets:
+  stage: build
+  script:
+    - echo "Building $APP for $PLATFORM-$ARCH with $COMPILER in $MODE"
+  parallel:
+    matrix:
+      - APP: ["server", "client", "cli", "sdk", "tools"]       # 5 apps
+        PLATFORM: ["linux", "windows", "macos", "freebsd"]     # 4 platforms
+        ARCH: ["x86", "x64", "arm32", "arm64"]                 # 4 architectures
+        COMPILER: ["gcc", "clang", "msvc"]                     # 3 compilers
+        MODE: ["debug", "release"]                              # 2 modes
+        # Total: 5 * 4 * 4 * 3 * 2 = 480 jobs - exceeds limit!

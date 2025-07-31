@@ -1,0 +1,100 @@
+# Test file for GL033: Parallel matrix limit checks
+# This file tests various parallel and matrix configurations
+
+stages:
+  - test
+  - build
+  - deploy
+
+# Simple parallel within limit - should pass
+test_unit:
+  stage: test
+  script:
+    - echo "Running unit test $CI_NODE_INDEX"
+  parallel: 50
+
+# Simple parallel approaching limit - should warn
+test_integration:
+  stage: test
+  script:
+    - echo "Running integration test $CI_NODE_INDEX"
+  parallel: 180
+
+# Simple parallel at limit - should pass
+test_e2e:
+  stage: test
+  script:
+    - echo "Running e2e test $CI_NODE_INDEX"
+  parallel: 200
+
+# Matrix list within limit - should pass
+test_browsers:
+  stage: test
+  script:
+    - echo "Testing $BROWSER on $OS"
+  parallel:
+    matrix:
+      - BROWSER: chrome
+        OS: linux
+      - BROWSER: firefox
+        OS: linux
+      - BROWSER: safari
+        OS: macos
+      - BROWSER: edge
+        OS: windows
+      # Total: 4 jobs
+
+# Matrix with multiple values (GitLab expands this into combinations)
+build_versions:
+  stage: build
+  script:
+    - echo "Building version $VERSION for $TARGET"
+  parallel:
+    matrix:
+      # This creates 3 * 2 = 6 jobs
+      - VERSION: "1.0"
+        TARGET: linux
+      - VERSION: "1.0"
+        TARGET: windows
+      - VERSION: "1.1"
+        TARGET: linux
+      - VERSION: "1.1"
+        TARGET: windows
+      - VERSION: "1.2"
+        TARGET: linux
+      - VERSION: "1.2"
+        TARGET: windows
+
+# Large matrix list approaching limit - should warn
+test_configurations:
+  stage: test
+  script:
+    - echo "Testing config $CONFIG_ID"
+  parallel:
+    matrix:
+      # Creating 160 individual matrix entries
+      - CONFIG_ID: "config_001"
+      - CONFIG_ID: "config_002"
+      - CONFIG_ID: "config_003"
+      - CONFIG_ID: "config_004"
+      - CONFIG_ID: "config_005"
+      - CONFIG_ID: "config_006"
+      - CONFIG_ID: "config_007"
+      - CONFIG_ID: "config_008"
+      - CONFIG_ID: "config_009"
+      - CONFIG_ID: "config_010"
+      # ... imagine 150 more entries here for brevity
+      # This would total 160 jobs - approaching limit
+
+# Job without parallel - should pass
+cleanup:
+  stage: deploy
+  script:
+    - echo "Cleaning up"
+  when: always
+
+# Hidden job template with parallel - should be ignored
+.parallel_template:
+  parallel: 250  # This would exceed, but hidden jobs are not checked
+  script:
+    - echo "Template"
