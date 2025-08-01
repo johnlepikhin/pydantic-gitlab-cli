@@ -167,9 +167,6 @@ def test_matrix_list_exceeds_limit():
 
     results = engine.lint_files([test_file])
 
-    # Check for GL033 violations
-    gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
-
     # The fixture file should have matrix configurations that exceed the limit
     # but since it uses list format with only 12 entries shown, it won't trigger
     # Let's check that the rule is at least being run
@@ -185,7 +182,7 @@ test:
   parallel:
     matrix:
       - VERSION: ["1", "2", "3", "4", "5"]  # 5 values
-        OS: ["linux", "windows", "mac"]      # 3 values  
+        OS: ["linux", "windows", "mac"]      # 3 values
         ARCH: ["x86", "arm"]                 # 2 values
         # Total: 5 * 3 * 2 = 30 jobs
 """
