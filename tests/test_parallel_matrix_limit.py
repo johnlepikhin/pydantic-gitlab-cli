@@ -1,9 +1,7 @@
 """Tests for ParallelMatrixLimitRule."""
 
-import pytest
-from pathlib import Path
 import tempfile
-import yaml
+from pathlib import Path
 
 from pydantic_gitlab_cli.linter.engine import LintEngine
 from pydantic_gitlab_cli.linter.rules.optimization import ParallelMatrixLimitRule
@@ -17,21 +15,21 @@ test:
     - echo test
   parallel: 10
 """
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(yaml_content)
         f.flush()
-        
+
         engine = LintEngine()
         rule = ParallelMatrixLimitRule()
         engine.register_rules([rule])
-        
+
         results = engine.lint_files([Path(f.name)])
-        
+
         # Check for GL033 violations
         gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
         assert len(gl033_violations) == 0
-        
+
         # Clean up
         Path(f.name).unlink()
 
@@ -46,26 +44,26 @@ test:
     - echo test
   parallel: 201
 """
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(yaml_content)
         f.flush()
-        
+
         engine = LintEngine()
         rule = ParallelMatrixLimitRule()
         engine.register_rules([rule])
-        
+
         # Try to lint the file
         results = engine.lint_files([Path(f.name)])
-        
+
         # The file will have a parse error due to pydantic-gitlab validation
         assert len(results) == 1
         result = results[0]
-        
+
         # Check if there's a parse error mentioning the parallel limit
         if result.parse_error:
             assert "200" in result.parse_error or "parallel" in result.parse_error.lower()
-        
+
         # Clean up
         Path(f.name).unlink()
 
@@ -78,21 +76,21 @@ test:
     - echo test
   parallel: 180
 """
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(yaml_content)
         f.flush()
-        
+
         engine = LintEngine()
         rule = ParallelMatrixLimitRule()
         engine.register_rules([rule])
-        
+
         results = engine.lint_files([Path(f.name)])
-        
+
         # Check for GL033 violations
         gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
         assert len(gl033_violations) == 0  # No violation for values <= 200
-        
+
         # Clean up
         Path(f.name).unlink()
 
@@ -105,21 +103,21 @@ test:
     - echo test
   parallel: 200
 """
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(yaml_content)
         f.flush()
-        
+
         engine = LintEngine()
         rule = ParallelMatrixLimitRule()
         engine.register_rules([rule])
-        
+
         results = engine.lint_files([Path(f.name)])
-        
+
         # Check for GL033 violations
         gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
         assert len(gl033_violations) == 0  # No violation for exactly 200
-        
+
         # Clean up
         Path(f.name).unlink()
 
@@ -139,21 +137,21 @@ test:
       - VAR1: c
         VAR2: "3"
 """
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(yaml_content)
         f.flush()
-        
+
         engine = LintEngine()
         rule = ParallelMatrixLimitRule()
         engine.register_rules([rule])
-        
+
         results = engine.lint_files([Path(f.name)])
-        
+
         # Check for GL033 violations
         gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
         assert len(gl033_violations) == 0
-        
+
         # Clean up
         Path(f.name).unlink()
 
@@ -162,16 +160,16 @@ def test_matrix_list_exceeds_limit():
     """Test matrix list configuration exceeding limit."""
     # Use the existing fixture file that has many matrix entries
     test_file = Path("tests/fixtures/parallel-matrix-exceed.gitlab-ci.yml")
-    
+
     engine = LintEngine()
     rule = ParallelMatrixLimitRule()
     engine.register_rules([rule])
-    
+
     results = engine.lint_files([test_file])
-    
+
     # Check for GL033 violations
     gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
-    
+
     # The fixture file should have matrix configurations that exceed the limit
     # but since it uses list format with only 12 entries shown, it won't trigger
     # Let's check that the rule is at least being run
@@ -191,21 +189,21 @@ test:
         ARCH: ["x86", "arm"]                 # 2 values
         # Total: 5 * 3 * 2 = 30 jobs
 """
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(yaml_content)
         f.flush()
-        
+
         engine = LintEngine()
         rule = ParallelMatrixLimitRule()
         engine.register_rules([rule])
-        
+
         results = engine.lint_files([Path(f.name)])
-        
+
         # Check for GL033 violations
         gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
         assert len(gl033_violations) == 0
-        
+
         # Clean up
         Path(f.name).unlink()
 
@@ -226,23 +224,23 @@ test:
         CONFIG: ["debug", "release"]
         # Total: 10 * 4 * 5 * 2 = 400 jobs
 """
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(yaml_content)
         f.flush()
-        
+
         engine = LintEngine()
         rule = ParallelMatrixLimitRule()
         engine.register_rules([rule])
-        
+
         results = engine.lint_files([Path(f.name)])
-        
+
         # Check for GL033 violations
         gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
-        
+
         if len(gl033_violations) > 0:
             assert "exceeding GitLab's limit of 200" in gl033_violations[0].message
-        
+
         # Clean up
         Path(f.name).unlink()
 
@@ -254,21 +252,21 @@ test:
   script:
     - echo test
 """
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(yaml_content)
         f.flush()
-        
+
         engine = LintEngine()
         rule = ParallelMatrixLimitRule()
         engine.register_rules([rule])
-        
+
         results = engine.lint_files([Path(f.name)])
-        
+
         # Check for GL033 violations
         gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
         assert len(gl033_violations) == 0
-        
+
         # Clean up
         Path(f.name).unlink()
 
@@ -282,20 +280,20 @@ test:
   parallel:
     matrix: []
 """
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         f.write(yaml_content)
         f.flush()
-        
+
         engine = LintEngine()
         rule = ParallelMatrixLimitRule()
         engine.register_rules([rule])
-        
+
         results = engine.lint_files([Path(f.name)])
-        
+
         # Check for GL033 violations
         gl033_violations = [v for result in results for v in result.violations if v.rule_id == "GL033"]
         assert len(gl033_violations) == 0
-        
+
         # Clean up
         Path(f.name).unlink()
