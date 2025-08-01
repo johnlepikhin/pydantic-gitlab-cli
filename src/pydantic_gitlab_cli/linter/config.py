@@ -18,7 +18,7 @@ try:
 except ImportError:
     # Python < 3.11
     try:
-        import tomli as tomllib  # type: ignore[import-untyped]
+        import tomli as tomllib
     except ImportError:
         tomllib = None
 

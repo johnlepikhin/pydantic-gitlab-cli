@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from pydantic_gitlab import GitLabCI
 
-from pydantic_gitlab_cli.linter.base import LintLevel, LintRule
+from pydantic_gitlab_cli.linter.base import LintLevel, LintResult, LintRule
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 class ReviewAppsRule(LintRule):
     """GL021: Review Apps validation - environments with review/$CI_COMMIT_REF_SLUG must have on_stop."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.WARNING)
 
     @property
@@ -29,7 +30,7 @@ class ReviewAppsRule(LintRule):
     def category(self) -> str:
         return "review"
 
-    def check(self, ci_config: GitLabCI, result) -> None:
+    def check(self, ci_config: GitLabCI, result: LintResult) -> None:
         """Check if review apps have proper on_stop configuration."""
         try:
             if not ci_config.jobs:
@@ -41,7 +42,7 @@ class ReviewAppsRule(LintRule):
         except Exception as e:
             logger.error("Error checking GL021 (ReviewApps): %s", e)
 
-    def _check_job_review_app_config(self, job_name: str, job, result) -> None:
+    def _check_job_review_app_config(self, job_name: str, job: Any, result: LintResult) -> None:
         """Check a single job for review app configuration."""
         # Skip template jobs (starting with .)
         if job_name.startswith("."):
@@ -65,21 +66,21 @@ class ReviewAppsRule(LintRule):
                 suggestion="Add on_stop: job_name to environment configuration",
             )
 
-    def _extract_environment_name(self, environment) -> str | None:
+    def _extract_environment_name(self, environment: Any) -> str | None:
         """Extract environment name from environment configuration."""
         if isinstance(environment, str):
             return environment
         if isinstance(environment, dict):
             return environment.get("name")
         if hasattr(environment, "name"):
-            return environment.name
+            return str(environment.name)
         return None
 
     def _is_review_app(self, env_name: str) -> bool:
         """Check if environment name indicates a review app."""
         return "review/" in env_name or "$CI_COMMIT_REF_SLUG" in env_name
 
-    def _has_on_stop_config(self, environment) -> bool:
+    def _has_on_stop_config(self, environment: Any) -> bool:
         """Check if environment has on_stop configuration."""
         if isinstance(environment, dict):
             return "on_stop" in environment and environment["on_stop"]
@@ -91,7 +92,7 @@ class ReviewAppsRule(LintRule):
 class StagesCompletenessRule(LintRule):
     """GL023: Each stage must contain at least one active job."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.WARNING)
 
     @property
@@ -106,7 +107,7 @@ class StagesCompletenessRule(LintRule):
     def category(self) -> str:
         return "structure"
 
-    def check(self, ci_config: GitLabCI, result) -> None:
+    def check(self, ci_config: GitLabCI, result: LintResult) -> None:
         """Check if all stages have at least one active job."""
         try:
             stages = self._get_defined_stages(ci_config)
@@ -119,14 +120,14 @@ class StagesCompletenessRule(LintRule):
         except Exception as e:
             logger.error("Error checking GL023 (StagesCompleteness): %s", e)
 
-    def _get_defined_stages(self, ci_config: GitLabCI) -> list:
+    def _get_defined_stages(self, ci_config: GitLabCI) -> list[str]:
         """Get list of defined stages."""
         if hasattr(ci_config, "stages") and ci_config.stages:
-            return ci_config.stages
+            return list(ci_config.stages)
         # Default GitLab stages if none specified
         return ["build", "test", "deploy"]
 
-    def _count_active_jobs_per_stage(self, ci_config: GitLabCI, stages: list) -> dict:
+    def _count_active_jobs_per_stage(self, ci_config: GitLabCI, stages: list[str]) -> dict[str, int]:
         """Count active jobs per stage."""
         stage_job_count = dict.fromkeys(stages, 0)
 
@@ -143,13 +144,13 @@ class StagesCompletenessRule(LintRule):
 
         return stage_job_count
 
-    def _get_job_stage(self, job) -> str:
+    def _get_job_stage(self, job: Any) -> str:
         """Get job stage with default fallback."""
         if hasattr(job, "stage") and job.stage:
-            return job.stage
+            return str(job.stage)
         return "test"  # Default stage
 
-    def _is_job_active(self, job) -> bool:
+    def _is_job_active(self, job: Any) -> bool:
         """Check if job is potentially active (not disabled by rules)."""
         # Check 'only: - never'
         if hasattr(job, "only") and job.only and isinstance(job.only, list) and "never" in job.only:
@@ -161,7 +162,7 @@ class StagesCompletenessRule(LintRule):
 
         return True
 
-    def _all_rules_are_never(self, rules) -> bool:
+    def _all_rules_are_never(self, rules: Any) -> bool:
         """Check if all rules have 'when: never'."""
         for rule in rules:
             if isinstance(rule, dict):
@@ -171,7 +172,7 @@ class StagesCompletenessRule(LintRule):
                 return False
         return True
 
-    def _report_empty_stages(self, stage_job_count: dict, result) -> None:
+    def _report_empty_stages(self, stage_job_count: dict[str, int], result: LintResult) -> None:
         """Report empty stages as violations."""
         for stage, count in stage_job_count.items():
             if count == 0:
@@ -185,7 +186,7 @@ class StagesCompletenessRule(LintRule):
 class AllowFailureValidityRule(LintRule):
     """GL024: allow_failure should specify expected exit_codes."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.INFO)
 
     @property
@@ -200,7 +201,7 @@ class AllowFailureValidityRule(LintRule):
     def category(self) -> str:
         return "quality"
 
-    def check(self, ci_config: GitLabCI, result) -> None:
+    def check(self, ci_config: GitLabCI, result: LintResult) -> None:
         """Check if allow_failure configurations specify exit_codes."""
         try:
             if not ci_config.jobs:
@@ -242,7 +243,7 @@ class AllowFailureValidityRule(LintRule):
 class RulesOptimizationRule(LintRule):
     """GL025: Check for duplicate or conflicting rules conditions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.INFO)
 
     @property
@@ -257,7 +258,7 @@ class RulesOptimizationRule(LintRule):
     def category(self) -> str:
         return "optimization"
 
-    def check(self, ci_config: GitLabCI, result) -> None:
+    def check(self, ci_config: GitLabCI, result: LintResult) -> None:
         """Check for duplicate or conflicting rules in jobs."""
         try:
             if not ci_config.jobs:
@@ -269,7 +270,7 @@ class RulesOptimizationRule(LintRule):
         except Exception as e:
             logger.error("Error checking GL025 (RulesOptimization): %s", e)
 
-    def _check_job_rules(self, job_name: str, job, result) -> None:
+    def _check_job_rules(self, job_name: str, job: Any, result: LintResult) -> None:
         """Check rules for a single job."""
         # Skip template jobs
         if job_name.startswith("."):
@@ -283,13 +284,13 @@ class RulesOptimizationRule(LintRule):
         self._check_duplicate_conditions(conditions, job_name, result)
         self._check_conflicting_branch_conditions(conditions, job_name, result)
 
-    def _get_job_rules(self, job) -> list:
+    def _get_job_rules(self, job: Any) -> list[Any]:
         """Get rules from a job."""
         if hasattr(job, "rules") and job.rules:
-            return job.rules
+            return list(job.rules)
         return []
 
-    def _extract_rule_conditions(self, rules) -> list:
+    def _extract_rule_conditions(self, rules: list[Any]) -> list[str]:
         """Extract conditions from rules."""
         conditions = []
         for rule in rules:
@@ -298,16 +299,16 @@ class RulesOptimizationRule(LintRule):
                 conditions.append(condition)
         return conditions
 
-    def _get_rule_condition(self, rule) -> str | None:
+    def _get_rule_condition(self, rule: Any) -> str | None:
         """Extract condition from a single rule."""
         if isinstance(rule, dict):
             return rule.get("if")
         if hasattr(rule, "if"):
             # Access using getattr to avoid keyword conflict
-            return getattr(rule, "if")
+            return str(getattr(rule, "if"))
         return None
 
-    def _check_duplicate_conditions(self, conditions: list, job_name: str, result) -> None:
+    def _check_duplicate_conditions(self, conditions: list[str], job_name: str, result: LintResult) -> None:
         """Check for duplicate rule conditions."""
         seen_conditions = set()
         for condition in conditions:
@@ -320,7 +321,7 @@ class RulesOptimizationRule(LintRule):
                 )
             seen_conditions.add(condition)
 
-    def _check_conflicting_branch_conditions(self, conditions: list, job_name: str, result) -> None:
+    def _check_conflicting_branch_conditions(self, conditions: list[str], job_name: str, result: LintResult) -> None:
         """Check for potentially conflicting branch conditions."""
         branch_conditions = [c for c in conditions if "$CI_COMMIT_REF_NAME" in c or "$CI_COMMIT_BRANCH" in c]
 
@@ -343,7 +344,7 @@ class RulesOptimizationRule(LintRule):
 class ResourceMonitoringRule(LintRule):
     """GL026: Remind about metrics collection for long-running pipelines."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.INFO)
 
     @property
@@ -358,7 +359,7 @@ class ResourceMonitoringRule(LintRule):
     def category(self) -> str:
         return "monitoring"
 
-    def check(self, ci_config: GitLabCI, result) -> None:
+    def check(self, ci_config: GitLabCI, result: LintResult) -> None:
         """Check if pipeline might benefit from monitoring setup."""
         try:
             if not ci_config.jobs:

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Any
 
 from pydantic_gitlab import GitLabCI
 
-from pydantic_gitlab_cli.linter.base import LintLevel, LintRule
+from pydantic_gitlab_cli.linter.base import LintLevel, LintResult, LintRule
 
 logger = logging.getLogger(__name__)
 
@@ -18,15 +19,15 @@ class PackageManagerCacheRule(LintRule):
     def __init__(self, enabled: bool = True, level: LintLevel = LintLevel.WARNING):
         super().__init__(enabled=enabled, level=level)
         # Define package manager patterns - subclasses should override
-        self.install_patterns = []
-        self.cache_paths = []
+        self.install_patterns: list[str] = []
+        self.cache_paths: list[str] = []
         self.package_manager_name = "unknown"
 
     @property
     def category(self) -> str:
         return "cache_optimization"
 
-    def _extract_script_commands(self, job) -> list[str]:
+    def _extract_script_commands(self, job: Any) -> list[str]:
         """Extract all script commands from a job."""
         commands = []
 
@@ -67,7 +68,7 @@ class PackageManagerCacheRule(LintRule):
 
         return found_commands
 
-    def _extract_cache_paths(self, cache_config) -> list[str]:
+    def _extract_cache_paths(self, cache_config: Any) -> list[str]:
         """Extract cache paths from cache configuration."""
         cache_paths = []
 
@@ -99,7 +100,7 @@ class PackageManagerCacheRule(LintRule):
                     return True
         return False
 
-    def _has_appropriate_cache(self, job) -> tuple[bool, list[str]]:
+    def _has_appropriate_cache(self, job: Any) -> tuple[bool, list[str]]:
         """Check if job has appropriate cache configuration."""
         if not hasattr(job, "cache") or not job.cache:
             return False, []
@@ -109,7 +110,7 @@ class PackageManagerCacheRule(LintRule):
 
         return has_relevant_cache, cache_paths
 
-    def check(self, ci_config: GitLabCI, result) -> None:
+    def check(self, ci_config: GitLabCI, result: LintResult) -> None:
         """Check for package manager usage without appropriate caching."""
         try:
             if not ci_config.jobs:
@@ -152,7 +153,7 @@ class PackageManagerCacheRule(LintRule):
 class PythonCacheRule(PackageManagerCacheRule):
     """GL027: Python pip cache optimization."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.WARNING)
         self.install_patterns = [
             r"\bpip\s+install\b",
@@ -180,7 +181,7 @@ class PythonCacheRule(PackageManagerCacheRule):
 class NodeCacheRule(PackageManagerCacheRule):
     """GL028: Node.js npm/yarn cache optimization."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.WARNING)
         self.install_patterns = [
             r"\bnpm\s+install\b",
@@ -210,7 +211,7 @@ class NodeCacheRule(PackageManagerCacheRule):
 class RustCacheRule(PackageManagerCacheRule):
     """GL029: Rust cargo cache optimization."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.WARNING)
         self.install_patterns = [
             r"\bcargo\s+build\b",
@@ -239,7 +240,7 @@ class RustCacheRule(PackageManagerCacheRule):
 class GoCacheRule(PackageManagerCacheRule):
     """GL030: Go module cache optimization."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.WARNING)
         self.install_patterns = [
             r"\bgo\s+build\b",
@@ -268,7 +269,7 @@ class GoCacheRule(PackageManagerCacheRule):
 class JavaCacheRule(PackageManagerCacheRule):
     """GL031: Java Maven/Gradle cache optimization."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.WARNING)
         self.install_patterns = [
             r"\bmvn\s+install\b",
@@ -299,7 +300,7 @@ class JavaCacheRule(PackageManagerCacheRule):
 class GeneralPackageManagerCacheRule(LintRule):
     """GL032: General package manager cache detection."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(enabled=True, level=LintLevel.INFO)
 
         # Common package manager patterns not covered by specific rules
@@ -334,7 +335,7 @@ class GeneralPackageManagerCacheRule(LintRule):
     def category(self) -> str:
         return "cache_optimization"
 
-    def _should_skip_job(self, job_name: str, job) -> bool:
+    def _should_skip_job(self, job_name: str, job: Any) -> bool:
         """Check if job should be skipped from caching analysis."""
         # Skip template jobs
         if job_name.startswith("."):
@@ -343,7 +344,7 @@ class GeneralPackageManagerCacheRule(LintRule):
         # Skip if already has cache configured
         return hasattr(job, "cache") and job.cache
 
-    def _extract_job_commands(self, job) -> list[str]:
+    def _extract_job_commands(self, job: Any) -> list[str]:
         """Extract all commands from job scripts."""
         commands = []
 
@@ -362,7 +363,7 @@ class GeneralPackageManagerCacheRule(LintRule):
 
         return commands
 
-    def _check_job_for_caching_opportunities(self, job_name: str, job, result) -> None:
+    def _check_job_for_caching_opportunities(self, job_name: str, job: Any, result: LintResult) -> None:
         """Check a single job for caching opportunities."""
         if self._should_skip_job(job_name, job):
             return
@@ -403,7 +404,7 @@ class GeneralPackageManagerCacheRule(LintRule):
                 suggestion=suggestion,
             )
 
-    def check(self, ci_config: GitLabCI, result) -> None:
+    def check(self, ci_config: GitLabCI, result: LintResult) -> None:
         """Check for package manager usage without appropriate caching."""
         try:
             if not ci_config.jobs:

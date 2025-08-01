@@ -18,25 +18,22 @@ def test_help():
     """Test help command."""
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    assert "A modern CLI utility for GitLab operations" in result.stdout
+    assert "GitLab CI/CD configuration linter and analyzer" in result.stdout
 
 
 def test_info_command():
     """Test info command."""
     result = runner.invoke(app, ["info"])
     assert result.exit_code == 0
-    assert "Pydantic GitLab CLI Info" in result.stdout
+    assert "GitLab CI/CD Linter Info" in result.stdout
 
 
 def test_hello_command():
     """Test hello command."""
+    # The hello command doesn't exist in this app
     result = runner.invoke(app, ["hello"])
-    assert result.exit_code == 0
-    assert "Hello, World!" in result.stdout
-
-    result = runner.invoke(app, ["hello", "Alice"])
-    assert result.exit_code == 0
-    assert "Hello, Alice!" in result.stdout
+    assert result.exit_code == 2  # Invalid command
+    assert "No such command" in result.stdout or "Usage" in result.stdout
 
 
 def test_projects_subcommand():
